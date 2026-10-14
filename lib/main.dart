@@ -79,19 +79,29 @@ class LifeDashboardScreen extends StatefulWidget {
 }
 
 class _LifeDashboardScreenState extends State<LifeDashboardScreen> {
-  Map stats = {};
-  bool isLoading = true;
+  Map stats = {
+    "vault_balance": 0.0,
+    "total_income": 0.0,
+    "total_hours": 0.0,
+    "total_projects": 0,
+    "total_debt": 0.0
+  };
+  bool isLoading = false;
   String selectedFilter = 'all'; 
 
   @override
   void initState() { super.initState(); fetchStats(); }
 
   Future<void> fetchStats() async {
-    setState(() => isLoading = true);
     try {
-      final response = await http.get(Uri.parse('https://rhind-backend.vercel.app/dashboard/stats?period=$selectedFilter'));
-      if (response.statusCode == 200) setState(() { stats = json.decode(utf8.decode(response.bodyBytes)); isLoading = false; });
-    } catch (e) { setState(() => isLoading = false); }
+      final response = await http.get(Uri.parse('https://rhind-backend.vercel.app/dashboard/stats?period=$selectedFilter'))
+          .timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        setState(() { stats = json.decode(utf8.decode(response.bodyBytes)); });
+      }
+    } catch (e) {
+      // تجاهل التأخير لضمان فتح الشاشة فوراً
+    }
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
@@ -101,24 +111,25 @@ class _LifeDashboardScreenState extends State<LifeDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     String formattedHours = "0h";
-    if (!isLoading && stats['total_hours'] != null) { int totalMins = (double.parse(stats['total_hours'].toString()) * 60).round(); formattedHours = '${totalMins ~/ 60}h ${totalMins % 60}m'; }
+    if (stats['total_hours'] != null) { 
+      int totalMins = (double.parse(stats['total_hours'].toString()) * 60).round(); 
+      formattedHours = '${totalMins ~/ 60}h ${totalMins % 60}m'; 
+    }
     return Scaffold(
-      appBar: AppBar(title: Image.asset('assets/logo.png', height: 40), centerTitle: true),
+      appBar: AppBar(title: const Text('Rhind ERP', style: TextStyle(fontWeight: FontWeight.bold)), centerTitle: true),
       body: RefreshIndicator(
         color: Colors.greenAccent, backgroundColor: Colors.black, onRefresh: fetchStats,
         child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (isLoading) const Center(child: Padding(padding: EdgeInsets.all(20.0), child: CircularProgressIndicator(color: Colors.greenAccent)))
-              else ...[
-                Card(color: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: const BorderSide(color: Colors.yellowAccent)), child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [const Icon(Icons.account_balance, color: Colors.yellowAccent, size: 40), const SizedBox(height: 10), const Text('Vault Balance (All Time)', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)), Text('${stats['vault_balance'] ?? 0} EGP', style: const TextStyle(color: Colors.yellowAccent, fontSize: 24, fontWeight: FontWeight.bold))]))),
-                const SizedBox(height: 10),
-                Row(children: [Expanded(child: _buildStatCard('Income', '${stats['total_income'] ?? 0} EGP', Icons.account_balance_wallet, Colors.greenAccent)), const SizedBox(width: 10), Expanded(child: _buildStatCard('Time', formattedHours, Icons.access_time, Colors.orangeAccent))]),
-                const SizedBox(height: 10),
-                Row(children: [Expanded(child: _buildStatCard('Active Projects', '${stats['total_projects'] ?? 0}', Icons.architecture, Colors.blueAccent)), const SizedBox(width: 10), Expanded(child: _buildStatCard('Debts Due', '${stats['total_debt'] ?? 0} EGP', Icons.money_off, Colors.redAccent))]),
-              ],
+              Card(color: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: const BorderSide(color: Colors.yellowAccent)), child: Padding(padding: const EdgeInsets.all(20), child: Column(children: [const Icon(Icons.account_balance, color: Colors.yellowAccent, size: 40), const SizedBox(height: 10), const Text('Vault Balance (All Time)', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)), Text('${stats['vault_balance'] ?? 0} EGP', style: const TextStyle(color: Colors.yellowAccent, fontSize: 24, fontWeight: FontWeight.bold))]))),
+              const SizedBox(height: 10),
+              Row(children: [Expanded(child: _buildStatCard('Income', '${stats['total_income'] ?? 0} EGP', Icons.account_balance_wallet, Colors.greenAccent)), const SizedBox(width: 10), Expanded(child: _buildStatCard('Time', formattedHours, Icons.access_time, Colors.orangeAccent))]),
+              const SizedBox(height: 10),
+              Row(children: [Expanded(child: _buildStatCard('Active Projects', '${stats['total_projects'] ?? 0}', Icons.architecture, Colors.blueAccent)), const SizedBox(width: 10), Expanded(child: _buildStatCard('Debts Due', '${stats['total_debt'] ?? 0} EGP', Icons.money_off, Colors.redAccent))]),
             ],
           ),
         ),
@@ -427,8 +438,8 @@ class _TaskWorkspaceScreenState extends State<TaskWorkspaceScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         if (!_stopwatch.isRunning) ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent), onPressed: _startWork, icon: const Icon(Icons.play_arrow, color: Colors.black), label: Text(_stopwatch.elapsed.inSeconds > 0 ? 'Resume' : 'Start', style: const TextStyle(color: Colors.black)))
-                        else ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent), onPressed: _pauseWork, icon: const Icon(Icons.pause, color: Colors.black), label: const Text('Pause', style: const TextStyle(color: Colors.black))),
-                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent), onPressed: _stopwatch.elapsed.inSeconds > 0 ? _endWorkShift : null, icon: const Icon(Icons.stop, color: Colors.white), label: const Text('End', style: const TextStyle(color: Colors.white))),
+                        else ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent), onPressed: _pauseWork, icon: const Icon(Icons.pause, color: Colors.black), label: const Text('Pause', style: TextStyle(color: Colors.black))),
+                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent), onPressed: _stopwatch.elapsed.inSeconds > 0 ? _endWorkShift : null, icon: const Icon(Icons.stop, color: Colors.white), label: const Text('End', style: TextStyle(color: Colors.white))),
                       ],
                     ),
                   ],
@@ -655,7 +666,7 @@ class _CreditorsScreenState extends State<CreditorsScreen> {
 
   Future<void> fetchCreditors() async { 
     try { 
-      final response = await http.get(Uri.parse('https://192.168.183.170:8000')); 
+      final response = await http.get(Uri.parse('https://rhind-backend.vercel.app/creditors/list')); 
       if (response.statusCode == 200) {
         setState(() { 
           creditors = json.decode(utf8.decode(response.bodyBytes)); 
