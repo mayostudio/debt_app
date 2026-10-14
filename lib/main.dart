@@ -427,8 +427,8 @@ class _TaskWorkspaceScreenState extends State<TaskWorkspaceScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         if (!_stopwatch.isRunning) ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent), onPressed: _startWork, icon: const Icon(Icons.play_arrow, color: Colors.black), label: Text(_stopwatch.elapsed.inSeconds > 0 ? 'Resume' : 'Start', style: const TextStyle(color: Colors.black)))
-                        else ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent), onPressed: _pauseWork, icon: const Icon(Icons.pause, color: Colors.black), label: const Text('Pause', style: TextStyle(color: Colors.black))),
-                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent), onPressed: _stopwatch.elapsed.inSeconds > 0 ? _endWorkShift : null, icon: const Icon(Icons.stop, color: Colors.white), label: const Text('End', style: TextStyle(color: Colors.white))),
+                        else ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent), onPressed: _pauseWork, icon: const Icon(Icons.pause, color: Colors.black), label: const Text('Pause', style: const TextStyle(color: Colors.black))),
+                        ElevatedButton.icon(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent), onPressed: _stopwatch.elapsed.inSeconds > 0 ? _endWorkShift : null, icon: const Icon(Icons.stop, color: Colors.white), label: const Text('End', style: const TextStyle(color: Colors.white))),
                       ],
                     ),
                   ],
@@ -637,10 +637,55 @@ class _TargetsTabState extends State<TargetsTab> {
 }
 
 // ================== 8. Creditors Screen ==================
-class CreditorsScreen extends StatefulWidget { const CreditorsScreen({super.key}); @override State<CreditorsScreen> createState() => _CreditorsScreenState(); }
+class CreditorsScreen extends StatefulWidget { 
+  const CreditorsScreen({super.key}); 
+  @override 
+  State<CreditorsScreen> createState() => _CreditorsScreenState(); 
+}
+
 class _CreditorsScreenState extends State<CreditorsScreen> {
-  List creditors = []; bool isLoading = true;
-  @override void initState() { super.initState(); fetchCreditors(); }
-  Future<void> fetchCreditors() async { try { final response = await http.get(Uri.parse('https://rhind-backend.vercel.app/creditors/list')); if (response.statusCode == 200) setState(() { creditors = json.decode(utf8.decode(response.bodyBytes)); isLoading = false; }); } catch (e) { setState(() => isLoading = false); } }
-  @override Widget build(BuildContext context) { return Scaffold(appBar: AppBar(title: const Text('Debts & Creditors'), centerTitle: true), body: isLoading ? const Center(child: CircularProgressIndicator(color: Colors.greenAccent)) : ListView.builder(itemCount: creditors.length, itemBuilder: (context, index) { final c = creditors[index]; return Card(child: ListTile(leading: const Icon(Icons.person), title: Text(c['name']), subtitle: Text(c['phone']))); }), floatingActionButton: FloatingActionButton(backgroundColor: Colors.greenAccent, foregroundColor: Colors.black, onPressed: () {}, child: const Icon(Icons.add))); }
+  List creditors = []; 
+  bool isLoading = true;
+
+  @override 
+  void initState() { 
+    super.initState(); 
+    fetchCreditors(); 
+  }
+
+  Future<void> fetchCreditors() async { 
+    try { 
+      final response = await http.get(Uri.parse('https://192.168.183.170:8000')); 
+      if (response.statusCode == 200) {
+        setState(() { 
+          creditors = json.decode(utf8.decode(response.bodyBytes)); 
+          isLoading = false; 
+        }); 
+      }
+    } catch (e) { 
+      setState(() => isLoading = false); 
+    } 
+  }
+
+  @override 
+  Widget build(BuildContext context) { 
+    return Scaffold(
+      appBar: AppBar(title: const Text('Debts & Creditors'), centerTitle: true), 
+      body: isLoading 
+        ? const Center(child: CircularProgressIndicator(color: Colors.greenAccent)) 
+        : ListView.builder(
+            itemCount: creditors.length, 
+            itemBuilder: (context, index) { 
+              final c = creditors[index]; 
+              return Card(child: ListTile(leading: const Icon(Icons.person), title: Text(c['name']), subtitle: Text(c['phone']))); 
+            }
+          ), 
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.greenAccent, 
+        foregroundColor: Colors.black, 
+        onPressed: () {}, 
+        child: const Icon(Icons.add)
+      ),
+    ); 
+  }
 }
